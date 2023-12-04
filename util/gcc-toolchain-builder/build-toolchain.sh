@@ -32,7 +32,7 @@ ROOT_DIR=$(dirname $(readlink -f $0))
 # - the user invoking this script has sufficient permissions
 #   to create/populate the installation directory.
 # - there are no restrictions on the parallelism of the build process
-#   ("make -j" without an explicit job limit causes no significant harm)
+#   ("make -j4" without an explicit job limit causes no significant harm)
 #
 # Builds of individual tools are performed under the matching
 # build/... subdirectories
@@ -163,7 +163,7 @@ cd $ROOT_DIR/build/binutils-gdb
 	      { echo "Could not configure binutils-gdb, bailing out!" ; \
 		exit 2 ; } ; } && \
     { [ -d gas/doc ] || mkdir -p gas/doc; } && \
-    make -j all && make install || \
+    make -j4 all && make install || \
 	{ echo "*** Could not build binutils, bailing out!" ; exit 2; }
 cd -
 
@@ -182,8 +182,8 @@ cd $ROOT_DIR/build/gcc
 	  ../../$GCC_DIR/configure $GCC_CONFIGURE_OPTS || \
 	      { echo "Could not configure GCC, bailing out!" ; \
 		exit 2 ; } ; } && \
-	make -j all || { rm -rf $TARGET && \
-			     make -j all ; } && make install || \
+	make -j4 all || { rm -rf $TARGET && \
+			     make -j4 all ; } && make install || \
 	{ echo "*** Could not build GCC (even after removing target dirs), bailing out!" ; exit 2; }
 cd -
 
@@ -209,7 +209,7 @@ export CFLAGS="-mcmodel=medium"
 	  ../../$NEWLIB_DIR/configure $NEWLIB_CONFIGURE_OPTS || \
 	      { echo "Could not configure newlib, bailing out!" ; \
 		exit 2 ; } ; } && \
-    make -j all && make install || \
+    make -j4 all && make install || \
 	{ echo "*** Could not build newlib, bailing out!" ; exit 2; }
 cd -
 
