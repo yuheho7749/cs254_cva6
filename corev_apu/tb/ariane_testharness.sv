@@ -625,6 +625,8 @@ module ariane_testharness #(
   // ---------------
   ariane_axi::req_t    axi_ariane_req;
   ariane_axi::resp_t   axi_ariane_resp;
+  ariane_axi::req_t    axi_ariane_req_l2;
+  ariane_axi::resp_t   axi_ariane_resp_l2;
   rvfi_instr_t [CVA6Cfg.NrCommitPorts-1:0] rvfi;
 
   ariane #(
@@ -648,12 +650,29 @@ module ariane_testharness #(
 `else
     .debug_req_i          ( debug_req_core      ),
 `endif
-    .noc_req_o            ( axi_ariane_req      ),
-    .noc_resp_i           ( axi_ariane_resp     )
+    .noc_req_o            ( axi_ariane_req   ),
+    .noc_resp_i           ( axi_ariane_resp  )
   );
 
-  `AXI_ASSIGN_FROM_REQ(slave[0], axi_ariane_req)
-  `AXI_ASSIGN_TO_RESP(axi_ariane_resp, slave[0])
+  `AXI_ASSIGN_FROM_REQ(slave[0], axi_ariane_req_l2 )
+  `AXI_ASSIGN_TO_RESP(axi_ariane_resp_l2, slave[0])
+
+  axi_llc_top llc(
+    .clk_i                ( clk_i                ),
+    .rst_ni               ( rst_ni & (~ndmreset) ),
+    .test_i               ( test_en              ),
+    .slv_req_i            ( axi_ariane_req       ),
+    .slv_resp_o           ( axi_ariane_resp      ),
+    .mst_req_o            ( axi_ariane_req_l2    ),
+    .mst_resp_i           ( axi_ariane_resp_l2   ),
+    .conf_regs_i
+    .conf_regs_o
+    .cached_start_addr_i
+    .cached_end_addr_i
+    .spm_start_addr_i
+    .axi_llc_events_o     (                      ) // keep open
+  );
+
 
   // -------------
   // Simulation Helper Functions
@@ -767,4 +786,7 @@ module ariane_testharness #(
     .CSYSACK('0)
   );
 `endif
+
+
+
 endmodule
