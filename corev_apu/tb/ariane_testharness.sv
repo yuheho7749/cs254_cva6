@@ -14,6 +14,9 @@
 //              Instantiates an AXI-Bus and memories
 
 `include "axi/assign.svh"
+`include "axi/typedef.svh"
+`include "register_interface/typedef.svh"
+`include "register_interface/assign.svh"
 
 module ariane_testharness #(
   parameter config_pkg::cva6_cfg_t CVA6Cfg = cva6_config_pkg::cva6_cfg,
@@ -59,13 +62,7 @@ module ariane_testharness #(
   /// Number of Blocks per cache line
   parameter int unsigned TbNumBlocks        = 32'd8,
   /// ID width of the Full AXI slave port, master port has ID `AxiIdWidthFull + 32'd1`
-  parameter int unsigned TbAxiIdWidthFull   = 32'd6,
-
-  parameter axi_addr_t SpmRegionStart     = axi_addr_t'(0),
-  parameter axi_addr_t SpmRegionLength    =
-      axi_addr_t'(32'd8 * TbNumLines * TbNumBlocks * TbAxiDataWidthFull / 32'd8),
-  parameter axi_addr_t CachedRegionStart  = axi_addr_t'(32'h8000_0000),
-  parameter axi_addr_t CachedRegionLength = axi_addr_t'(2*SpmRegionLength)
+  parameter int unsigned TbAxiIdWidthFull   = 32'd6
 ) (
   input  logic                           clk_i,
   input  logic                           rtc_i,
@@ -541,6 +538,12 @@ module ariane_testharness #(
     NoAddrRules: unsigned'(ariane_soc::NB_PERIPHERALS)
   };
 
+  // localparam axi_addr_t SpmRegionStart     = axi_addr_t'(0);
+  // localparam axi_addr_t SpmRegionLength    =
+  //     axi_addr_t'(32'd8 * TbNumLines * TbNumBlocks * TbAxiDataWidthFull / 32'd8);
+  // localparam axi_addr_t CachedRegionStart  = axi_addr_t'(32'h8000_0000);
+  // localparam axi_addr_t CachedRegionLength = axi_addr_t'(2*SpmRegionLength);
+
   axi_xbar_intf #(
     .AXI_USER_WIDTH ( AXI_USER_WIDTH          ),
     .Cfg            ( AXI_XBAR_CFG            ),
@@ -670,7 +673,8 @@ module ariane_testharness #(
 
   `AXI_ASSIGN_FROM_REQ(slave[0], axi_ariane_req_l2)
   `AXI_ASSIGN_TO_RESP(axi_ariane_resp_l2, slave[0])
-
+  `AXI_TYPEDEF_REQ_T(ariane_axi::req_t, ariane_axi::aw_chan_t, ariane_axi::w_chan_t, ariane_axi::ar_chan_t)
+  `AXI_TYPEDEF_RESP_T(ariane_axi::resp_t, ariane_axi::b_chan_t, ariane_axi::r_chan_t)
 
   axi_llc_top llc (
     .clk_i                ( clk_i                ),
@@ -682,9 +686,12 @@ module ariane_testharness #(
     .mst_resp_i           ( axi_ariane_resp_l2   ),
     .conf_regs_i          (                      ),
     .conf_regs_o          (                      ),
-    .cached_start_addr_i  ( CachedRegionStart    ),
-    .cached_end_addr_i    ( CachedRegionStart + CachedRegionLength ),
-    .spm_start_addr_i     ( SpmRegionStart       ),
+    // .cached_start_addr_i  ( CachedRegionStart    ),
+    // .cached_end_addr_i    ( CachedRegionStart + CachedRegionLength ),
+    // .spm_start_addr_i     ( SpmRegionStart       ),
+    .cached_start_addr_i  ( axi_addr_t'(32'h8000_0000)    ),
+    .cached_end_addr_i    ( axi_addr_t'(32'h8000_0000) + axi_addr_t'(2*axi_addr_t'(32'd8 * TbNumLines * TbNumBlocks * TbAxiDataWidthFull / 32'd8)) ),
+    .spm_start_addr_i     ( axi_addr_t'(0)       ),
     .axi_llc_events_o     (                      ) // keep open
   );
 
