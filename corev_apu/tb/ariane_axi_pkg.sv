@@ -14,6 +14,8 @@
  *
  * Description: Contains Ariane's AXI ports, does not contain user ports
  */
+`ifndef ARIANE_AXI
+`define ARIANE_AXI
 
 package ariane_axi;
 
@@ -107,3 +109,4 @@ package ariane_axi;
     } resp_t;
 
 endpackage
+`endif
