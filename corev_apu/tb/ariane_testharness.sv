@@ -674,15 +674,15 @@ module ariane_testharness #(
 
   `AXI_ASSIGN_FROM_REQ(slave[0], axi_ariane_req_l2)
   `AXI_ASSIGN_TO_RESP(axi_ariane_resp_l2, slave[0])
-  // `AXI_TYPEDEF_REQ_T(ariane_axi::req_t, ariane_axi::aw_chan_t, ariane_axi::w_chan_t, ariane_axi::ar_chan_t)
-  // `AXI_TYPEDEF_RESP_T(ariane_axi::resp_t, ariane_axi::b_chan_t, ariane_axi::r_chan_t)
+  // `AXI_TYPEDEF_REQ_T(reqt, aw_chant, w_chant, ar_chant)
+  // `AXI_TYPEDEF_RESP_T(respt, b_chant, r_chant)
   typedef struct packed {
     int unsigned idx;
     axi_addr_t   start_addr;
     axi_addr_t   end_addr;
   } rule_full_t;
 
-  axi_llc_reg_wrap #(
+  axi_llc_top #(
     .SetAssociativity ( TbSetAssociativity ),
     .NumLines         ( TbNumLines         ),
     .NumBlocks        ( TbNumBlocks        ),
@@ -690,12 +690,15 @@ module ariane_testharness #(
     .AxiAddrWidth     ( TbAxiAddrWidthFull ),
     .AxiDataWidth     ( TbAxiDataWidthFull ),
     .AxiUserWidth     ( TbAxiUserWidthFull ),
+    .RegWidth         ( 32'd64             ),
+    .conf_regs_d_t    (                    ),
+    .conf_regs_q_t    (                    ),
     .slv_req_t        ( ariane_axi::req_t  ),
     .slv_resp_t       ( ariane_axi::resp_t ),
     .mst_req_t        ( ariane_axi::req_t  ),
     .mst_resp_t       ( ariane_axi::resp_t ),
-    .reg_req_t        ( logic              ),
-    .reg_resp_t       ( logic              ),
+    .reg_req_t        (                    ),
+    .reg_resp_t       (                    ),
     .rule_full_t      ( rule_full_t        )
   ) i_axi_llc_dut (
     .clk_i               ( clk_i                                  ),
@@ -705,8 +708,8 @@ module ariane_testharness #(
     .slv_resp_o          ( axi_ariane_resp                        ),
     .mst_req_o           ( axi_ariane_req_l2                      ),
     .mst_resp_i          ( axi_ariane_resp_l2                     ),
-    .conf_req_i          (                                        ),
-    .conf_resp_o         (                                        ),
+    .conf_regs_i         (                                        ),
+    .conf_regs_o         (                                        ),
     .cached_start_addr_i ( axi_addr_t'(32'h8000_0000)             ),
     .cached_end_addr_i   ( axi_addr_t'(32'h8000_0000) + axi_addr_t'(2*axi_addr_t'(32'd8 * TbNumLines * TbNumBlocks * TbAxiDataWidthFull / 32'd8)) ),
     .spm_start_addr_i    ( axi_addr_t'(0)                         ),
