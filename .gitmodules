@@ -45,4 +45,5 @@
 	url = https://github.com/google/riscv-dv.git
 [submodule "corev_apu/tb/cs254_axi_llc"]
 	path = corev_apu/tb/cs254_axi_llc
-	url = https://github.com/yuheho7749/cs254_axi_llc/tree/Vicki/Modified.git
+	url = https://github.com/yuheho7749/cs254_axi_llc.git
+	branch =  Vicki/Modified
