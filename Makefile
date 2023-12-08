@@ -220,8 +220,8 @@ tbs := $(addprefix $(root-dir), $(tbs))
 
 # RISCV asm tests and benchmark setup (used for CI)
 # there is a definesd test-list with selected CI tests
-riscv-test-dir            := tmp/riscv-tests/build/isa/
-riscv-benchmarks-dir      := tmp/riscv-tests/build/benchmarks/
+riscv-test-dir            := verif/tests/riscv-tests/build/isa
+riscv-benchmarks-dir      := verif/tests/riscv-tests/build/benchmarks
 riscv-asm-tests-list      := ci/riscv-asm-tests.list
 riscv-amo-tests-list      := ci/riscv-amo-tests.list
 riscv-mul-tests-list      := ci/riscv-mul-tests.list
