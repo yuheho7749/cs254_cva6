@@ -43,9 +43,6 @@
 [submodule "verif/sim/dv"]
 	path = verif/sim/dv
 	url = https://github.com/google/riscv-dv.git
-[submodule "corev_apu/cs254_axi_llc"]
-	path = corev_apu/cs254_axi_llc
-	url = https://github.com/yuheho7749/cs254_axi_llc.git
 [submodule "corev_apu/tb/cs254_axi_llc"]
 	path = corev_apu/tb/cs254_axi_llc
 	url = https://github.com/yuheho7749/cs254_axi_llc.git
