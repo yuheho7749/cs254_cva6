@@ -551,6 +551,7 @@ verilate_command := $(verilator) verilator_config.vlt                           
                     +incdir+corev_apu/axi_node                                                                   \
                     $(if $(verilator_threads), --threads $(verilator_threads))                                   \
                     --unroll-count 256                                                                           \
+					--no-timing                                                              		             \
                     -Wall                                                                                        \
                     -Werror-PINMISSING                                                                           \
                     -Werror-IMPLICIT                                                                             \

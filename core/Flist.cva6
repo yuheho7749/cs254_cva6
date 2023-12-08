@@ -33,10 +33,13 @@ ${CVA6_REPO_DIR}/vendor/pulp-platform/fpga-support/rtl/AsyncThreePortRam.sv
 +incdir+${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/include/
 +incdir+${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/src/
 +incdir+${CVA6_REPO_DIR}/vendor/pulp-platform/axi/include/
++incdir+${CVA6_REPO_DIR}/vendor/pulp-platform/axi/src/
 +incdir+${CVA6_REPO_DIR}/common/local/util/
-+incdir+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src
-+incdir+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/include
-+incdir+${CVA6_REPO_DIR}/corev_apu/tb
++incdir+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/
++incdir+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/include/
++incdir+${CVA6_REPO_DIR}/corev_apu/tb/
+
+${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/src/cb_filter_pkg.sv
 
 // Floating point unit
 ${CVA6_REPO_DIR}/vendor/openhwgroup/cvfpu/src/fpnew_pkg.sv
@@ -191,7 +194,6 @@ ${CVA6_REPO_DIR}/core/mmu_sv32/cva6_tlb_sv32.sv
 ${CVA6_REPO_DIR}/core/mmu_sv32/cva6_shared_tlb_sv32.sv
 
 // L2 Cache
-${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/src/cb_filter_pkg.sv
 ${CVA6_REPO_DIR}/corev_apu/tb/ariane_axi_pkg.sv
 ${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_pkg.sv
 ${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_burst_cutter.sv
