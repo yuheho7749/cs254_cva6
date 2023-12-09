@@ -25,7 +25,7 @@ VCOM ?= vcom$(questa_version)
 VLIB ?= vlib$(questa_version)
 VMAP ?= vmap$(questa_version)
 # verilator version
-VERILATOR_INSTALL_DIR ?= $(PWD)/tmp/verilator-v5.008/verilator/
+VERILATOR_INSTALL_DIR ?= 
 verilator             ?= verilator
 # traget option
 target-options ?=
@@ -542,7 +542,7 @@ xrun-check-benchmarks:
 xrun-ci: xrun-asm-tests xrun-amo-tests xrun-mul-tests xrun-fp-tests xrun-benchmarks
 
 # verilator-specific
-verilate_command := $(verilator) verilator_config.vlt                                                            \
+verilate_command := verilator verilator_config.vlt                                                            \
                     -f core/Flist.cva6                                                                           \
                     $(filter-out %.vhd, $(ariane_pkg))                                                           \
                     $(filter-out core/fpu_wrap.sv, $(filter-out %.vhd, $(filter-out %_config_pkg.sv, $(src))))   \

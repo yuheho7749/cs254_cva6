@@ -682,7 +682,19 @@ module ariane_testharness #(
     axi_addr_t   end_addr;
   } rule_full_t;
 
-  axi_llc_reg_wrap #(
+
+  `AXI_LLC_TYPEDEF_ALL(axi_llc, logic [63:0], logic[TbSetAssociativity-1:0])
+  axi_llc_reg_pkg::axi_llc_reg2hw_t config_reg2hw;
+  axi_llc_reg_pkg::axi_llc_hw2reg_t config_hw2reg;
+
+  axi_llc_cfg_regs_d_t config_regs_d;
+  axi_llc_cfg_regs_q_t config_regs_q;
+
+
+  `AXI_LLC_ASSIGN_REGS_Q_FROM_REGBUS(config_regs_q, config_reg2hw)
+  `AXI_LLC_ASSIGN_REGBUS_FROM_REGS_D(config_hw2reg, config_regs_d)
+
+  axi_llc_top #(
     .SetAssociativity ( TbSetAssociativity ),
     .NumLines         ( TbNumLines         ),
     .NumBlocks        ( TbNumBlocks        ),
@@ -690,12 +702,13 @@ module ariane_testharness #(
     .AxiAddrWidth     ( TbAxiAddrWidthFull ),
     .AxiDataWidth     ( TbAxiDataWidthFull ),
     .AxiUserWidth     ( TbAxiUserWidthFull ),
+    .RegWidth         ( 32'd64             ),
+    .conf_regs_d_t    ( axi_llc_cfg_regs_d_t           ),
+    .conf_regs_q_t    ( axi_llc_cfg_regs_q_t           ),
     .slv_req_t        ( ariane_axi::req_t  ),
     .slv_resp_t       ( ariane_axi::resp_t ),
     .mst_req_t        ( ariane_axi::req_t  ),
     .mst_resp_t       ( ariane_axi::resp_t ),
-    .reg_req_t        ( logic              ),
-    .reg_resp_t       ( logic              ),
     .rule_full_t      ( rule_full_t        )
   ) i_axi_llc_dut (
     .clk_i               ( clk_i                                  ),
@@ -705,32 +718,15 @@ module ariane_testharness #(
     .slv_resp_o          ( axi_ariane_resp                        ),
     .mst_req_o           ( axi_ariane_req_l2                      ),
     .mst_resp_i          ( axi_ariane_resp_l2                     ),
-    .conf_req_i          (                                        ),
-    .conf_resp_o         (                                        ),
+    .conf_regs_i         ( config_regs_d                          ),
+    .conf_regs_o         ( config_regs_q                         ),
     .cached_start_addr_i ( axi_addr_t'(32'h8000_0000)             ),
     .cached_end_addr_i   ( axi_addr_t'(32'h8000_0000) + axi_addr_t'(2*axi_addr_t'(32'd8 * TbNumLines * TbNumBlocks * TbAxiDataWidthFull / 32'd8)) ),
     .spm_start_addr_i    ( axi_addr_t'(0)                         ),
     .axi_llc_events_o    (                                        )
   );
 
-  // axi_llc_top llc (
-  //   .clk_i                ( clk_i                ),
-  //   .rst_ni               ( rst_ni & (~ndmreset) ),
-  //   .test_i               ( test_en              ),
-  //   .slv_req_i            ( axi_ariane_req       ),
-  //   .slv_resp_o           ( axi_ariane_resp      ),
-  //   .mst_req_o            ( axi_ariane_req_l2    ),
-  //   .mst_resp_i           ( axi_ariane_resp_l2   ),
-  //   .conf_regs_i          (                      ),
-  //   .conf_regs_o          (                      ),
-  //   // .cached_start_addr_i  ( CachedRegionStart    ),
-  //   // .cached_end_addr_i    ( CachedRegionStart + CachedRegionLength ),
-  //   // .spm_start_addr_i     ( SpmRegionStart       ),
-  //   .cached_start_addr_i  ( axi_addr_t'(32'h8000_0000)    ),
-  //   .cached_end_addr_i    ( axi_addr_t'(32'h8000_0000) + axi_addr_t'(2*axi_addr_t'(32'd8 * TbNumLines * TbNumBlocks * TbAxiDataWidthFull / 32'd8)) ),
-  //   .spm_start_addr_i     ( axi_addr_t'(0)       ),
-  //   .axi_llc_events_o     (                      ) // keep open
-  // );
+  
 
   // -------------
   // Simulation Helper Functions
