@@ -25,7 +25,6 @@ VCOM ?= vcom$(questa_version)
 VLIB ?= vlib$(questa_version)
 VMAP ?= vmap$(questa_version)
 # verilator version
-VERILATOR_INSTALL_DIR ?= $(PWD)/tmp/verilator-v5.008/verilator/
 verilator             ?= verilator
 # traget option
 target-options ?=
@@ -220,8 +219,8 @@ tbs := $(addprefix $(root-dir), $(tbs))
 
 # RISCV asm tests and benchmark setup (used for CI)
 # there is a definesd test-list with selected CI tests
-riscv-test-dir            := verif/tests/riscv-tests/build/isa
-riscv-benchmarks-dir      := verif/tests/riscv-tests/build/benchmarks
+riscv-test-dir            := tmp/riscv-tests/build/isa/
+riscv-benchmarks-dir      := tmp/riscv-tests/build/benchmarks/
 riscv-asm-tests-list      := ci/riscv-asm-tests.list
 riscv-amo-tests-list      := ci/riscv-amo-tests.list
 riscv-mul-tests-list      := ci/riscv-mul-tests.list
@@ -542,7 +541,7 @@ xrun-check-benchmarks:
 xrun-ci: xrun-asm-tests xrun-amo-tests xrun-mul-tests xrun-fp-tests xrun-benchmarks
 
 # verilator-specific
-verilate_command := $(verilator) verilator_config.vlt                                                            \
+verilate_command := $(verilator) --no-timing verilator_config.vlt                                                            \
                     -f core/Flist.cva6                                                                           \
                     $(filter-out %.vhd, $(ariane_pkg))                                                           \
                     $(filter-out core/fpu_wrap.sv, $(filter-out %.vhd, $(filter-out %_config_pkg.sv, $(src))))   \
@@ -551,7 +550,6 @@ verilate_command := $(verilator) verilator_config.vlt                           
                     +incdir+corev_apu/axi_node                                                                   \
                     $(if $(verilator_threads), --threads $(verilator_threads))                                   \
                     --unroll-count 256                                                                           \
-					--no-timing                                                              		             \
                     -Wall                                                                                        \
                     -Werror-PINMISSING                                                                           \
                     -Werror-IMPLICIT                                                                             \

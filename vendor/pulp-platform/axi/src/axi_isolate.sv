@@ -94,14 +94,14 @@ module axi_isolate #(
   if (TerminateTransaction) begin
     axi_demux #(
       .AxiIdWidth     ( AxiIdWidth  ),
-      .AtopSupport    ( AtopSupport ),
+      // .AtopSupport    ( AtopSupport ),
       .aw_chan_t      ( aw_chan_t   ),
       .w_chan_t       ( w_chan_t    ),
       .b_chan_t       ( b_chan_t    ),
       .ar_chan_t      ( ar_chan_t   ),
       .r_chan_t       ( r_chan_t    ),
-      .axi_req_t      ( axi_req_t   ),
-      .axi_resp_t     ( axi_resp_t  ),
+      .req_t      ( axi_req_t   ),
+      .resp_t     ( axi_resp_t  ),
       .NoMstPorts     ( 2           ),
       .MaxTrans       ( NumPending  ),
       // We don't need many bits here as the common case will be to go for the pass-through.
