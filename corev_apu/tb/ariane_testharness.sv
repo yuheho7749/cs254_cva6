@@ -58,14 +58,10 @@ module ariane_testharness #(
   parameter bit          StallRandomOutput = 1'b0,
   parameter bit          StallRandomInput  = 1'b0,
 
-  parameter int unsigned TbSetAssociativity = 32'd8,
-  parameter int unsigned TbNumLines         = 32'd256,
-  parameter int unsigned TbNumBlocks        = 32'd8,
-  parameter int unsigned TbAxiIdWidthFull   = 32'd6,
-  parameter int unsigned TbAxiAddrWidthFull = 32'd32,
-  parameter int unsigned TbAxiDataWidthFull = 32'd128,
-  parameter int unsigned TbAxiUserWidthFull = 32'd1,
-  parameter type axi_addr_t     = logic[TbAxiAddrWidthFull-1:0]
+  parameter int unsigned SetAssociativity = 32'd1,
+  parameter int unsigned NumLines         = 32'd256,
+  parameter int unsigned NumBlocks        = 32'd8,
+  parameter type axi_addr_t     = logic[AXI_ADDRESS_WIDTH-1:0]
 ) (
   input  logic                           clk_i,
   input  logic                           rtc_i,
@@ -543,8 +539,8 @@ module ariane_testharness #(
 
   localparam axi_addr_t SpmRegionStart     = axi_addr_t'(0);
   localparam axi_addr_t SpmRegionLength    =
-      axi_addr_t'(32'd8 * TbNumLines * TbNumBlocks * TbAxiDataWidthFull / 32'd8);
-  localparam axi_addr_t CachedRegionStart  = axi_addr_t'(32'h8000_0000);
+      axi_addr_t'(32'd8 * NumLines * NumBlocks * AXI_DATA_WIDTH / 32'd8);
+  localparam axi_addr_t CachedRegionStart  = axi_addr_t'(32'h9500_0000);
   localparam axi_addr_t CachedRegionLength = axi_addr_t'(2*SpmRegionLength);
 
   axi_xbar_intf #(
@@ -640,14 +636,78 @@ module ariane_testharness #(
 
   uart_bus #(.BAUD_RATE(115200), .PARITY_EN(0)) i_uart_bus (.rx(tx), .tx(rx), .rx_en(1'b1));
 
+  ariane_axi::req_t    axi_ariane_req;
+  ariane_axi::resp_t   axi_ariane_resp;
+  rvfi_instr_t [CVA6Cfg.NrCommitPorts-1:0] rvfi;
+  ariane_axi::req_t    axi_ariane_req_l2;
+  ariane_axi::resp_t   axi_ariane_resp_l2;
+  // ariane_axi::req_t    axi_ariane_req_l2_2;
+  // ariane_axi::resp_t   axi_ariane_resp_l2_2;
+
+  `REG_BUS_TYPEDEF_ALL(conf, logic [31:0], logic [31:0], logic [3:0])
+  axi_llc_pkg::events_t llc_events;
+  conf_req_t     reg_cfg_req;
+  conf_rsp_t     reg_cfg_rsp;
+
+  // AXI_BUS #(
+  //   .AXI_ADDR_WIDTH ( AXI_ADDRESS_WIDTH ),
+  //   .AXI_DATA_WIDTH ( AXI_DATA_WIDTH ),
+  //   .AXI_ID_WIDTH   ( ariane_axi_soc::IdWidthSlave   ),
+  //   .AXI_USER_WIDTH ( AXI_USER_WIDTH )                        
+  // ) axi_cpu_intf();
+
+  REG_BUS #(
+    .ADDR_WIDTH ( 32 ),
+    .DATA_WIDTH ( 32 )
+  ) reg_bus (clk_i);
+  
+  // `AXI_ASSIGN_TO_REQ(axi_ariane_req_l2_2, axi_cpu_intf)
+  // `AXI_ASSIGN_FROM_RESP(axi_cpu_intf, axi_ariane_resp_l2_2)
+
+  `AXI_ASSIGN_FROM_REQ(slave[0], axi_ariane_req_l2)
+  `AXI_ASSIGN_TO_RESP(axi_ariane_resp_l2, slave[0])
+
+  // `AXI_ASSIGN_FROM_REQ(axi_cpu_intf, axi_ariane_req)
+  // `AXI_ASSIGN_TO_RESP(axi_ariane_resp, axi_cpu_intf)
+
+  `REG_BUS_ASSIGN_TO_REQ(reg_cfg_req, reg_bus)
+  `REG_BUS_ASSIGN_FROM_RSP(reg_bus, reg_cfg_rsp)
+
+  axi_llc_reg_wrap #(
+    .SetAssociativity ( SetAssociativity ),
+    .NumLines         ( NumLines         ),
+    .NumBlocks        ( NumBlocks        ),
+    .AxiIdWidth       ( ariane_axi_soc::IdWidthSlave   ),
+    .AxiAddrWidth     ( AXI_ADDRESS_WIDTH ),
+    .AxiDataWidth     ( AXI_DATA_WIDTH ),
+    .AxiUserWidth     ( AXI_USER_WIDTH ),
+    .slv_req_t        ( ariane_axi::req_t      ),
+    .slv_resp_t       ( ariane_axi::resp_t     ),
+    .mst_req_t        ( ariane_axi::req_t      ),
+    .mst_resp_t       ( ariane_axi::resp_t     ),
+    .reg_req_t        ( conf_req_t         ),
+    .reg_resp_t       ( conf_rsp_t         ),
+  ) i_axi_llc_dut (
+    .clk_i               ( clk_i                                    ),
+    .rst_ni              ( rst_ni & (~ndmreset)                                  ),
+    .test_i              ( test_en                                   ),
+    // .slv_req_i           ( axi_ariane_req_l2_2                            ),
+    // .slv_resp_o          ( axi_ariane_resp_l2_2                            ),
+    .slv_req_i           ( axi_ariane_req                            ),
+    .slv_resp_o          ( axi_ariane_resp                            ),
+    .mst_req_o           ( axi_ariane_req_l2                            ),
+    .mst_resp_i          ( axi_ariane_resp_l2                            ),
+    .conf_req_i          ( reg_cfg_req                            ),
+    .conf_resp_o         ( reg_cfg_rsp                            ),
+    .cached_start_addr_i ( CachedRegionStart                      ),
+    .cached_end_addr_i   ( CachedRegionStart + CachedRegionLength ),
+    .spm_start_addr_i    ( SpmRegionStart                         ),
+    .axi_llc_events_o    ( llc_events                             )
+  );
+
   // ---------------
   // Core
   // ---------------
-  ariane_axi::req_t    axi_ariane_req;
-  ariane_axi::resp_t   axi_ariane_resp;
-  ariane_axi::req_t    axi_ariane_req_l2;
-  ariane_axi::resp_t   axi_ariane_resp_l2;
-  rvfi_instr_t [CVA6Cfg.NrCommitPorts-1:0] rvfi;
 
   ariane #(
     .CVA6Cfg              ( CVA6Cfg             ),
@@ -674,60 +734,161 @@ module ariane_testharness #(
     .noc_resp_i           ( axi_ariane_resp     )
   );
 
-  `AXI_ASSIGN_FROM_REQ(slave[0], axi_ariane_req_l2)
-  `AXI_ASSIGN_TO_RESP(axi_ariane_resp_l2, slave[0])
-  
-  typedef struct packed {
-    int unsigned idx;
-    axi_addr_t   start_addr;
-    axi_addr_t   end_addr;
-  } rule_full_t;
-
-  `AXI_LLC_TYPEDEF_ALL(axi_llc, logic [63:0], logic[TbSetAssociativity-1:0])
-  axi_llc_reg_pkg::axi_llc_reg2hw_t config_reg2hw;
-  axi_llc_reg_pkg::axi_llc_hw2reg_t config_hw2reg;
-  axi_llc_cfg_regs_d_t config_regs_d;
-  axi_llc_cfg_regs_q_t config_regs_q;
-  `AXI_LLC_ASSIGN_REGS_Q_FROM_REGBUS(config_regs_q, config_reg2hw)
-  `AXI_LLC_ASSIGN_REGBUS_FROM_REGS_D(config_hw2reg, config_regs_d)
-
-  axi_llc_top #(
-    .SetAssociativity ( TbSetAssociativity    ),
-    .NumLines         ( TbNumLines            ),
-    .NumBlocks        ( TbNumBlocks           ),
-    .AxiIdWidth       ( TbAxiIdWidthFull      ),
-    .AxiAddrWidth     ( TbAxiAddrWidthFull    ),
-    .AxiDataWidth     ( TbAxiDataWidthFull    ),
-    .AxiUserWidth     ( TbAxiUserWidthFull    ),
-    .RegWidth         ( 32'd64                ),
-    .conf_regs_d_t    ( axi_llc_cfg_regs_d_t  ),
-    .conf_regs_q_t    ( axi_llc_cfg_regs_q_t  ),
-    .slv_req_t        ( ariane_axi::req_t     ),
-    .slv_resp_t       ( ariane_axi::resp_t    ),
-    .mst_req_t        ( ariane_axi::req_t     ),
-    .mst_resp_t       ( ariane_axi::resp_t    ),
-    .rule_full_t      ( rule_full_t           )
-  ) i_axi_llc_dut (
-    .clk_i               ( clk_i                                  ),
-    .rst_ni              ( rst_ni & (~ndmreset)                   ),
-    .test_i              ( test_en                                ),
-    .slv_req_i           ( axi_ariane_req                         ),
-    .slv_resp_o          ( axi_ariane_resp                        ),
-    .mst_req_o           ( axi_ariane_req_l2                      ),
-    .mst_resp_i          ( axi_ariane_resp_l2                     ),
-    .conf_regs_i         ( config_regs_d                          ),
-    .conf_regs_o         ( config_regs_q                          ),
-    .cached_start_addr_i ( CachedRegionStart                      ),
-    .cached_end_addr_i   ( CachedRegionStart + CachedRegionLength ),
-    .spm_start_addr_i    ( SpmRegionStart                         ),
-    .axi_llc_events_o    (                                        )
-  );
+  // `AXI_ASSIGN_FROM_REQ(slave[0], axi_ariane_req)
+  // `AXI_ASSIGN_TO_RESP(axi_ariane_resp, slave[0])
 
   // -------------
   // Simulation Helper Functions
   // -------------
   // check for response errors
   always_ff @(posedge clk_i) begin : p_assert
+        // if (llc_events.aw_slv_transfer.active) begin
+        //   $warning("llc events aw_slv_transfer");
+        // end
+        // if (llc_events.ar_slv_transfer.active) begin
+        //   $warning("llc events ar_slv_transfer");
+        // end
+        // if (llc_events.aw_bypass_transfer.active) begin
+        //   $warning("llc events aw_bypass_transfer");
+        // end
+        // if (llc_events.ar_bypass_transfer.active) begin
+        //   $warning("llc events ar_bypass_transfer");
+        // end
+        // if (llc_events.aw_mst_transfer.active) begin
+        //   $warning("llc events aw_mst_transfer");
+        // end
+        // if (llc_events.ar_mst_transfer.active) begin
+        //   $warning("llc events ar_mst_transfer");
+        // end
+        // if (llc_events.aw_desc_spm.active) begin
+        //   $warning("llc events aw_desc_spm");
+        // end
+        // if (llc_events.ar_desc_spm.active) begin
+        //   $warning("llc events ar_desc_spm");
+        // end
+        // if (llc_events.aw_desc_cache.active) begin
+        //   $warning("llc events aw_desc_cache");
+        // end
+        // if (llc_events.ar_desc_cache.active) begin
+        //   $warning("llc events ar_desc_cacher");
+        // end
+        // if (llc_events.config_desc.active) begin
+        //   $warning("llc events config_desc");
+        // end
+        // if (llc_events.hit_write_spm.active) begin
+        //   $warning("llc events hit_write_spm");
+        // end
+        // if (llc_events.hit_read_spm.active) begin
+        //   $warning("llc events hit_read_spm");
+        // end
+        // if (llc_events.miss_write_spm.active) begin
+        //   $warning("llc events miss_write_spm");
+        // end
+        // if (llc_events.miss_read_spm.active) begin
+        //   $warning("llc events miss_read_spm");
+        // end
+        // if (llc_events.hit_write_cache.active) begin
+        //   $warning("llc events hit_write_cache");
+        // end
+        // if (llc_events.hit_read_cache.active) begin
+        //   $warning("llc events hit_read_cache");
+        // end
+        // if (llc_events.miss_write_cache.active) begin
+        //   $warning("llc events miss_write_cache");
+        // end
+        // if (llc_events.miss_read_cache.active) begin
+        //   $warning("llc events miss_read_cache");
+        // end
+        // if (llc_events.refill_write.active) begin
+        //   $warning("llc events refill_write");
+        // end
+        // if (llc_events.refill_read.active) begin
+        //   $warning("llc events refill_read");
+        // end
+        // if (llc_events.evict_write.active) begin
+        //   $warning("llc events evict_write");
+        // end
+        // if (llc_events.evict_read.active) begin
+        //   $warning("llc events evict_readr");
+        // end
+        // if (llc_events.evict_flush.active) begin
+        //   $warning("llc events evict_flush");
+        // end
+        // if (llc_events.evict_unit_req) begin
+        //   $warning("llc events evict_unit_req");
+        // end
+        // if (llc_events.refill_unit_req) begin
+        //   $warning("llc events refill_unit_req");
+        // end
+        // if (llc_events.w_chan_unit_req) begin
+        //   $warning("llc events w_chan_unit_req");
+        // end
+        // if (llc_events.r_chan_unit_req) begin
+        //   $warning("llc events r_chan_unit_req");
+        // end
+
+    // if (axi_ariane_req.r_ready) begin
+    //   $warning("axi_ariane_req r_ready");
+    // end
+    // if (axi_ariane_req_l2.r_ready) begin
+    //   $warning("axi_ariane_req_l2 r_ready");
+    // end
+    // if (axi_ariane_req.w_valid) begin
+    //   $warning("axi_ariane_req w_valid");
+    // end
+    // if (axi_ariane_req_l2.w_valid) begin
+    //   $warning("axi_ariane_req_l2 w_valid");
+    // end
+    // if (axi_ariane_req.aw_valid) begin
+    //   $warning("axi_ariane_req aw_valid");
+    // end
+    // if (axi_ariane_req_l2.aw_valid) begin
+    //   $warning("axi_ariane_req_l2 aw_valid");
+    // end
+    // if (axi_ariane_req.ar_valid) begin
+    //   $warning("axi_ariane_req ar_valid");
+    // end
+    // if (axi_ariane_req_l2.ar_valid) begin
+    //   $warning("axi_ariane_req_l2 ar_valid");
+    // end
+    // if (axi_ariane_req.b_ready) begin
+    //   $warning("axi_ariane_req b_ready");
+    // end
+    // if (axi_ariane_req_l2.b_ready) begin
+    //   $warning("axi_ariane_req_l2 b_ready");
+    // end
+
+    // if (axi_ariane_resp.r_valid) begin
+    //   $warning("axi_ariane_resp r_valid");
+    // end
+    // if (axi_ariane_resp_l2.r_valid) begin
+    //   $warning("axi_ariane_resp_l2 r_valid");
+    // end
+    // if (axi_ariane_resp.w_ready) begin
+    //   $warning("axi_ariane_resp w_ready");
+    // end
+    // if (axi_ariane_resp_l2.w_ready) begin
+    //   $warning("axi_ariane_resp_l2 w_ready");
+    // end
+    // if (axi_ariane_resp.aw_ready) begin
+    //   $warning("axi_ariane_resp aw_ready");
+    // end
+    // if (axi_ariane_resp_l2.aw_ready) begin
+    //   $warning("axi_ariane_resp_l2 aw_ready");
+    // end
+    // if (axi_ariane_resp.ar_ready) begin
+    //   $warning("axi_ariane_resp ar_ready");
+    // end
+    // if (axi_ariane_resp_l2.ar_ready) begin
+    //   $warning("axi_ariane_resp_l2 ar_ready");
+    // end
+    // if (axi_ariane_resp.b_valid) begin
+    //   $warning("axi_ariane_resp b_valid");
+    // end
+    // if (axi_ariane_resp_l2.b_valid) begin
+    //   $warning("axi_ariane_resp_l2 b_valid");
+    // end
+
     if (axi_ariane_req.r_ready &&
       axi_ariane_resp.r_valid &&
       axi_ariane_resp.r.resp inside {axi_pkg::RESP_DECERR, axi_pkg::RESP_SLVERR}) begin
