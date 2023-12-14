@@ -14,6 +14,11 @@
 //              Instantiates an AXI-Bus and memories
 
 `include "axi/assign.svh"
+`include "axi/typedef.svh"
+`include "register_interface/typedef.svh"
+`include "register_interface/assign.svh"
+`include "axi_llc/typedef.svh"
+`include "axi_llc/assign.svh"
 
 module ariane_testharness #(
   parameter config_pkg::cva6_cfg_t CVA6Cfg = cva6_config_pkg::cva6_cfg,
@@ -51,7 +56,16 @@ module ariane_testharness #(
   parameter bit          InclSimDTM        = 1'b1,
   parameter int unsigned NUM_WORDS         = 2**25,         // memory size
   parameter bit          StallRandomOutput = 1'b0,
-  parameter bit          StallRandomInput  = 1'b0
+  parameter bit          StallRandomInput  = 1'b0,
+
+  parameter int unsigned TbSetAssociativity = 32'd8,
+  parameter int unsigned TbNumLines         = 32'd256,
+  parameter int unsigned TbNumBlocks        = 32'd8,
+  parameter int unsigned TbAxiIdWidthFull   = 32'd6,
+  parameter int unsigned TbAxiAddrWidthFull = 32'd32,
+  parameter int unsigned TbAxiDataWidthFull = 32'd128,
+  parameter int unsigned TbAxiUserWidthFull = 32'd1,
+  parameter type axi_addr_t     = logic[TbAxiAddrWidthFull-1:0]
 ) (
   input  logic                           clk_i,
   input  logic                           rtc_i,
@@ -527,6 +541,12 @@ module ariane_testharness #(
     NoAddrRules: unsigned'(ariane_soc::NB_PERIPHERALS)
   };
 
+  localparam axi_addr_t SpmRegionStart     = axi_addr_t'(0);
+  localparam axi_addr_t SpmRegionLength    =
+      axi_addr_t'(32'd8 * TbNumLines * TbNumBlocks * TbAxiDataWidthFull / 32'd8);
+  localparam axi_addr_t CachedRegionStart  = axi_addr_t'(32'h8000_0000);
+  localparam axi_addr_t CachedRegionLength = axi_addr_t'(2*SpmRegionLength);
+
   axi_xbar_intf #(
     .AXI_USER_WIDTH ( AXI_USER_WIDTH          ),
     .Cfg            ( AXI_XBAR_CFG            ),
@@ -625,6 +645,8 @@ module ariane_testharness #(
   // ---------------
   ariane_axi::req_t    axi_ariane_req;
   ariane_axi::resp_t   axi_ariane_resp;
+  ariane_axi::req_t    axi_ariane_req_l2;
+  ariane_axi::resp_t   axi_ariane_resp_l2;
   rvfi_instr_t [CVA6Cfg.NrCommitPorts-1:0] rvfi;
 
   ariane #(
@@ -652,8 +674,54 @@ module ariane_testharness #(
     .noc_resp_i           ( axi_ariane_resp     )
   );
 
-  `AXI_ASSIGN_FROM_REQ(slave[0], axi_ariane_req)
-  `AXI_ASSIGN_TO_RESP(axi_ariane_resp, slave[0])
+  `AXI_ASSIGN_FROM_REQ(slave[0], axi_ariane_req_l2)
+  `AXI_ASSIGN_TO_RESP(axi_ariane_resp_l2, slave[0])
+  
+  typedef struct packed {
+    int unsigned idx;
+    axi_addr_t   start_addr;
+    axi_addr_t   end_addr;
+  } rule_full_t;
+
+  `AXI_LLC_TYPEDEF_ALL(axi_llc, logic [63:0], logic[TbSetAssociativity-1:0])
+  axi_llc_reg_pkg::axi_llc_reg2hw_t config_reg2hw;
+  axi_llc_reg_pkg::axi_llc_hw2reg_t config_hw2reg;
+  axi_llc_cfg_regs_d_t config_regs_d;
+  axi_llc_cfg_regs_q_t config_regs_q;
+  `AXI_LLC_ASSIGN_REGS_Q_FROM_REGBUS(config_regs_q, config_reg2hw)
+  `AXI_LLC_ASSIGN_REGBUS_FROM_REGS_D(config_hw2reg, config_regs_d)
+
+  axi_llc_top #(
+    .SetAssociativity ( TbSetAssociativity    ),
+    .NumLines         ( TbNumLines            ),
+    .NumBlocks        ( TbNumBlocks           ),
+    .AxiIdWidth       ( TbAxiIdWidthFull      ),
+    .AxiAddrWidth     ( TbAxiAddrWidthFull    ),
+    .AxiDataWidth     ( TbAxiDataWidthFull    ),
+    .AxiUserWidth     ( TbAxiUserWidthFull    ),
+    .RegWidth         ( 32'd64                ),
+    .conf_regs_d_t    ( axi_llc_cfg_regs_d_t  ),
+    .conf_regs_q_t    ( axi_llc_cfg_regs_q_t  ),
+    .slv_req_t        ( ariane_axi::req_t     ),
+    .slv_resp_t       ( ariane_axi::resp_t    ),
+    .mst_req_t        ( ariane_axi::req_t     ),
+    .mst_resp_t       ( ariane_axi::resp_t    ),
+    .rule_full_t      ( rule_full_t           )
+  ) i_axi_llc_dut (
+    .clk_i               ( clk_i                                  ),
+    .rst_ni              ( rst_ni & (~ndmreset)                   ),
+    .test_i              ( test_en                                ),
+    .slv_req_i           ( axi_ariane_req                         ),
+    .slv_resp_o          ( axi_ariane_resp                        ),
+    .mst_req_o           ( axi_ariane_req_l2                      ),
+    .mst_resp_i          ( axi_ariane_resp_l2                     ),
+    .conf_regs_i         ( config_regs_d                          ),
+    .conf_regs_o         ( config_regs_q                          ),
+    .cached_start_addr_i ( CachedRegionStart                      ),
+    .cached_end_addr_i   ( CachedRegionStart + CachedRegionLength ),
+    .spm_start_addr_i    ( SpmRegionStart                         ),
+    .axi_llc_events_o    (                                        )
+  );
 
   // -------------
   // Simulation Helper Functions

@@ -33,7 +33,13 @@ ${CVA6_REPO_DIR}/vendor/pulp-platform/fpga-support/rtl/AsyncThreePortRam.sv
 +incdir+${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/include/
 +incdir+${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/src/
 +incdir+${CVA6_REPO_DIR}/vendor/pulp-platform/axi/include/
++incdir+${CVA6_REPO_DIR}/vendor/pulp-platform/axi/src/
 +incdir+${CVA6_REPO_DIR}/common/local/util/
++incdir+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/
++incdir+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/include/
++incdir+${CVA6_REPO_DIR}/corev_apu/tb/
+
+${CVA6_REPO_DIR}/vendor/pulp-platform/common_cells/src/cb_filter_pkg.sv
 
 // Floating point unit
 ${CVA6_REPO_DIR}/vendor/openhwgroup/cvfpu/src/fpnew_pkg.sv
@@ -186,5 +192,32 @@ ${CVA6_REPO_DIR}/core/mmu_sv32/cva6_mmu_sv32.sv
 ${CVA6_REPO_DIR}/core/mmu_sv32/cva6_ptw_sv32.sv
 ${CVA6_REPO_DIR}/core/mmu_sv32/cva6_tlb_sv32.sv
 ${CVA6_REPO_DIR}/core/mmu_sv32/cva6_shared_tlb_sv32.sv
+
+// L2 Cache
+${CVA6_REPO_DIR}/corev_apu/tb/ariane_axi_pkg.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_pkg.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_burst_cutter.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_chan_splitter.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_config.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_data_way.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_evict_unit.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_hit_miss.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_merge_unit.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_read_unit.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_refill_unit.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_reg_pkg.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_reg_top.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_reg_wrap.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_top.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_ways.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/axi_llc_write_unit.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/eviction_refill/axi_llc_ax_master.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/eviction_refill/axi_llc_r_master.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/eviction_refill/axi_llc_w_master.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/hit_miss_detect/axi_llc_evict_box.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/hit_miss_detect/axi_llc_lock_box_bloom.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/hit_miss_detect/axi_llc_miss_counters.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/hit_miss_detect/axi_llc_tag_pattern_gen.sv
+${CVA6_REPO_DIR}/corev_apu/tb/cs254_axi_llc/src/hit_miss_detect/axi_llc_tag_store.sv
 
 // end of manifest
